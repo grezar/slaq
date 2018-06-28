@@ -5,7 +5,7 @@ module Slaq
     module Quiz
       def run
         tmp_dir_path = File.expand_path("../../tmp", __dir__)
-        quizmaster = Slaq::QuizMaster.new
+        quizmaster = Slaq::Quizmaster.new
 
         loop do
           if question_file_exist?
