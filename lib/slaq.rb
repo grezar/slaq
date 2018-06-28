@@ -22,30 +22,32 @@ module Slaq
       puts "Successfully connected, welcome '#{client.self.name}'"
     end
 
-    push_time = 0
+    time_pressed_a = 0
     respondant = nil
     answer = nil
 
     client.on :message do |data|
 
-      answer_span = data.ts.to_i - push_time
-      if data.text != 'g' && data.user == respondant && answer_span < ANSWER_LIMIT_TIME
+      time_taken_to_answer = data.ts.to_i - time_pressed_a
+      if data.text != 'g' && data.user == respondant && time_taken_to_answer < ANSWER_LIMIT_TIME
         if data.text == answer
           quizmaster.correct
-          correct_answer = true
+          quiz_filer.write_signal(signal: 'next')
         else
           quizmaster.wrong
+          quiz_filter.write_signal(signal: 'start')
         end
       end
 
       case data.text
       when 'q' then
         quiz = Quiz.new.random
-        question = quiz.fetch(:question)
         answer = quiz.fetch(:answer)
-        quiz_filer.write_quiz(question: question, answer: answer)
+        quiz_filer.write_quiz(quiz)
       when 'a' then
-        quiz_filer.write_signal(signal: stop)
+        respondant = data.user
+        time_pressed_a = data.ts.to_i
+        quiz_filer.write_signal(signal: 'stop')
       when 'g' then
         quizmaster.answer(answer)
       end
@@ -63,5 +65,4 @@ module Slaq
     client.start!
     Slaq::Worker::Quiz.start!
   end
-end
 end
