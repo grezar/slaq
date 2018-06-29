@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/slaq/workers/event_worker'
+
+puts "[INFO] start slaq event worker"
+
+Slaq::Workers::EventWorker.run!
