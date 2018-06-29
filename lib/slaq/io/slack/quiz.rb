@@ -47,6 +47,7 @@ module Slaq
               end
             end
           end
+          io_json.truncate_quiz_file
         end
 
         def post_urge_the_answer(channel)

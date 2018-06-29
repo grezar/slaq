@@ -13,9 +13,9 @@ module Slaq
 
         loop do
           next unless io_json.quiz_file_exist? && io_json.quiz_file_has_content?
+          sleep 0.1
           quiz = io_json.read_quiz
           io_slack.post_quiz_text_continuously(quiz)
-          io_json.write_signal(signal: 'next')
         end
       end
     end
