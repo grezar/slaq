@@ -2,8 +2,8 @@ module Slaq
   module IO
     class Slack
       module Quiz
-        def post_quiz_text_continuously(quiz)
-          question = quiz.fetch(:question)
+        def post_quiz_text_continuously(queue = {})
+          question = quiz.fetch(:quiz).fetch(:question)
           channel = quiz.fetch(:channel)
           signal = quiz.fetch(:signal)
           last_post_ts = nil

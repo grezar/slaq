@@ -47,9 +47,10 @@ module Slaq
 
           case data.text
           when 'q'
-            quiz = Slaq::Quiz.new
-            quiz.current = quiz.random
+            quiz = Slaq::Quiz.new.random
             answer = quiz.fetch(:quiz).fetch(:answer)
+            quiz.store("channel".to_sym, data.channel)
+            quiz.store("signal".to_sym, "continue")
             io_json.write_quiz(quiz)
           when 'a'
             respondant = data.user

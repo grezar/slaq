@@ -25,7 +25,9 @@ module Slaq
         end
 
         def write_quiz(quiz = {})
-          File.open("#{path}/quiz.json", 'w') { |quiz_file| JSON.dump(quiz, quiz_file) }
+          File.open("#{path}/quiz.json", 'w') do |quiz_file|
+            JSON.dump(quiz, quiz_file)
+          end
         end
       end
     end
