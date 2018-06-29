@@ -5,24 +5,21 @@ module Slaq
     ANSWER_LIMIT_TIME=10.freeze
 
     def random
-      get_all_quizzes_from_google_drive.sample
+      get_quizzes_from_text_file.sample
     end
 
-    def get_all_quizzes_from_google_drive
-       [
-         {
-           quiz: {
-             question: "物を荒々しくつかむ事を、ある鳥に例えて、なにつかみというでしょう?",
-             answer: "わしづかみ"
-           }
-         },
-         {
-           quiz: {
-             question: "牛２頭で、いちにちに耕した面積が起源といわれる、ヤード・ポンド法の面積の単位は何でしょう？",
-             answer: "エーカー"
-           }
-         },
-       ]
+    def get_quizzes_from_text_file
+      quizzes_dir_path = File.expand_path('../../quizzes', __dir__)
+      quizzes = []
+
+      File.open("#{quizzes_dir_path}/quiz.txt", "r") do |quiz_file|
+        quiz_file.each_line do |quiz|
+          splited = quiz.split(",")
+          quizzes << { quiz: { question: splited[0].chomp, answer: splited[1].chomp } }
+        end
+      end
+
+      quizzes
     end
   end
 end
