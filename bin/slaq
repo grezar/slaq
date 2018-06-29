@@ -2,4 +2,6 @@
 
 require_relative '../lib/slaq'
 
+tmp_dir_path = File.expand_path('../tmp', __dir__)
+Dir.mkdir(tmp_dir_path, 0755) unless Dir.exist?(tmp_dir_path)
 Slaq.start!
