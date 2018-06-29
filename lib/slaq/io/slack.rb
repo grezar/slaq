@@ -15,49 +15,56 @@ module Slaq
         raise 'Missing ENV[SLAQ_RTM_API_TOKEN]!' unless config.token
       end
 
-      attr_reader :client
+      attr_reader :client, :io_json
 
       def initialize
         @client = ::Slack::RealTime::Client.new
+        tmp_dir_path = File.expand_path("../../../tmp", __dir__)
+        @io_json = Slaq::IO::Json.new(tmp_dir_path)
       end
 
       def handle_messages
-        tmp_dir_path = File.expand_path("../../../tmp", __dir__)
-        io_json = Slaq::IO::Json.new(tmp_dir_path)
-
         client.on :hello do
           puts "Successfully connected, welcome '#{client.self.name}'"
         end
 
         time_pressed_a = 0
-        respondant = nil
+        respondant = 'anonymous'
         answer = nil
+        during_quiz = nil
 
         client.on :message do |data|
           time_taken_to_answer = data.ts.to_i - time_pressed_a
           if data.text != 'g' && data.user == respondant && time_taken_to_answer < Slaq::Quiz::ANSWER_LIMIT_TIME
             if data.text == answer
-              io_slack.post_correct
+              post_correct(data.channel)
+              respondant = 'anonymous'
               io_json.write_signal(signal: 'next')
             else
-              io_slack.post_wrong
-              io_json.write_signal(signal: 'start')
+              post_wrong(data.channel)
+              io_json.write_signal(signal: 'continue')
             end
           end
 
           case data.text
           when 'q'
+            io_json.truncate_quiz_file if io_json.quiz_file_exist?
+            io_json.truncate_signal_file if io_json.signal_file_exist?
             quiz = Slaq::Quiz.new.random
-            answer = quiz.fetch(:quiz).fetch(:answer)
             quiz.store("channel".to_sym, data.channel)
-            quiz.store("signal".to_sym, "continue")
             io_json.write_quiz(quiz)
+            io_json.write_signal(signal: 'continue')
+            during_quiz = true
           when 'a'
-            respondant = data.user
-            time_pressed_a = data.ts.to_i
-            io_json.write_signal(signal: 'stop')
+            if during_quiz
+              io_json.write_signal(signal: 'pause')
+              post_urge_the_answer(data.channel)
+              answer = io_json.read_quiz["quiz"]["answer"]
+              respondant = data.user
+              time_pressed_a = data.ts.to_i
+            end
           when 'g'
-            io_slack.post_answer(answer)
+            post_answer(data.channel, answer)
           end
         end
 

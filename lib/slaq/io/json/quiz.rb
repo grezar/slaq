@@ -6,27 +6,27 @@ module Slaq
           File.exist?("#{path}/quiz.json")
         end
 
+        def quiz_file_has_content?
+          File.size?("#{path}/quiz.json")
+        end
+
         def read_quiz
+          quiz = nil
           File.open("#{path}/quiz.json", "r+") do |quiz_file|
-
-            quiz_file.each_line do |line|
-              if line.include?("question:")
-                question = line.gsub(/^question:\s/, "")
-              elsif line.include?("answer:")
-                answer = line.gsub(/^answer:\s/, "")
-              else
-                signal = line.gsub(/^signal:\s/, "")
-              end
-            end
-
-            # 読み込んだら空にする
-            quiz_file = nil
+            quiz = JSON.load(quiz_file)
           end
+          quiz
         end
 
         def write_quiz(quiz = {})
           File.open("#{path}/quiz.json", 'w') do |quiz_file|
             JSON.dump(quiz, quiz_file)
+          end
+        end
+
+        def truncate_quiz_file
+          if quiz_file_exist?
+            File.open("#{path}/quiz.json", 'w') { |quiz_file| quiz_file.truncate(0) }
           end
         end
       end
