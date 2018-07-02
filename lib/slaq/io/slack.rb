@@ -49,18 +49,20 @@ module Slaq
 
           case data.text
           when 'q'
-            io_json.truncate_quiz_file if io_json.quiz_file_exist?
-            io_json.truncate_signal_file if io_json.signal_file_exist?
-            quiz = Slaq::Quiz.new.random
-            quiz.store("channel".to_sym, data.channel)
-            answer = quiz[:quiz][:answer]
-            during_quiz = true
-            io_json.write_quiz(quiz)
-            io_json.write_signal(signal: 'continue')
+            unless during_quiz
+              io_json.truncate_quiz_file if io_json.quiz_file_exist?
+              io_json.truncate_signal_file if io_json.signal_file_exist?
+              quiz = Slaq::Quiz.new.random
+              quiz.store("channel".to_sym, data.channel)
+              answer = quiz[:quiz][:answer]
+              during_quiz = true
+              io_json.write_quiz(quiz)
+              io_json.write_signal(signal: 'continue')
+            end
           when 'a'
-            if during_quiz
+            if during_quiz && respondant == 'anonymous'
               io_json.write_signal(signal: 'pause')
-              post_urge_the_answer(data.channel)
+              post_urge_the_answer(data.channel, data.user)
               respondant = data.user
               time_pressed_a = data.ts.to_i
             end
@@ -68,6 +70,7 @@ module Slaq
             if during_quiz
               post_answer(data.channel, answer)
               io_json.write_signal(signal: 'next')
+              respondant = 'anonymous'
               during_quiz = nil
             end
           end

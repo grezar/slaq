@@ -50,8 +50,8 @@ module Slaq
           io_json.truncate_quiz_file
         end
 
-        def post_urge_the_answer(channel)
-          client.message(channel: channel, text: "答えをどうぞ")
+        def post_urge_the_answer(channel, respondant)
+          client.message(channel: channel, text: "@#{respondant} 答えをどうぞ")
         end
 
         def post_correct(channel)
