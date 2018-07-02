@@ -51,7 +51,7 @@ module Slaq
         end
 
         def post_urge_the_answer(channel, respondant)
-          client.message(channel: channel, text: "@#{respondant} 答えをどうぞ")
+          client.message(channel: channel, text: "<@#{respondant}> 答えをどうぞ")
         end
 
         def post_correct(channel)

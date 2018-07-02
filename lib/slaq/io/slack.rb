@@ -37,13 +37,14 @@ module Slaq
           time_taken_to_answer = data.ts.to_i - time_pressed_a
           if data.text != 'g' && data.text != 'q' && data.user == respondant && time_taken_to_answer < Slaq::Quiz::ANSWER_LIMIT_TIME
             if data.text == answer
-              post_correct(data.channel)
+              io_json.write_signal(signal: 'next')
               respondant = 'anonymous'
               during_quiz = nil
-              io_json.write_signal(signal: 'next')
+              post_correct(data.channel)
             else
-              post_wrong(data.channel)
               io_json.write_signal(signal: 'continue')
+              respondant = 'anonymous'
+              post_wrong(data.channel)
             end
           end
 
@@ -60,7 +61,7 @@ module Slaq
               io_json.write_signal(signal: 'continue')
             end
           when 'a'
-            if during_quiz && respondant == 'anonymous'
+            if (during_quiz && respondant == 'anonymous') || time_taken_to_answer > Slaq::Quiz::ANSWER_LIMIT_TIME
               io_json.write_signal(signal: 'pause')
               post_urge_the_answer(data.channel, data.user)
               respondant = data.user
