@@ -2,6 +2,7 @@ require 'slack-ruby-client'
 require_relative '../quiz'
 require_relative 'slack/quiz'
 require_relative 'json/quiz'
+require_relative '../wikipedia'
 
 module Slaq
   module IO
@@ -15,12 +16,13 @@ module Slaq
         raise 'Missing ENV[SLAQ_RTM_API_TOKEN]!' unless config.token
       end
 
-      attr_reader :client, :io_json
+      attr_reader :client, :io_json, :wikipedia
 
       def initialize
         @client = ::Slack::RealTime::Client.new
         tmp_dir_path = File.expand_path("../../../tmp", __dir__)
         @io_json = Slaq::IO::Json.new(tmp_dir_path)
+        @wikipedia = Slaq::Wikipedia.new
       end
 
       def handle_messages
@@ -30,8 +32,10 @@ module Slaq
 
         time_pressed_a = 0
         respondant = 'anonymous'
+        question = nil
         answer = nil
         during_quiz = nil
+        wiki_link = nil
 
         client.on :message do |data|
           time_taken_to_answer = data.ts.to_i - time_pressed_a
@@ -40,6 +44,7 @@ module Slaq
               io_json.write_signal(signal: 'next')
               respondant = 'anonymous'
               during_quiz = nil
+              post_answer(data.channel, question, answer, wiki_link)
               post_correct(data.channel)
             else
               io_json.write_signal(signal: 'continue')
@@ -55,10 +60,12 @@ module Slaq
               io_json.truncate_signal_file if io_json.signal_file_exist?
               quiz = Slaq::Quiz.new.random
               quiz.store("channel".to_sym, data.channel)
+              question = quiz[:quiz][:question]
               answer = quiz[:quiz][:answer]
               during_quiz = true
               io_json.write_quiz(quiz)
               io_json.write_signal(signal: 'continue')
+              wiki_link = wikipedia.find_link_by_answer(answer)
             end
           when 'a'
             if (during_quiz && respondant == 'anonymous') || time_taken_to_answer > Slaq::Quiz::ANSWER_LIMIT_TIME
@@ -69,7 +76,7 @@ module Slaq
             end
           when 'g'
             if during_quiz
-              post_answer(data.channel, answer)
+              post_answer(data.channel, question, answer, wiki_link)
               io_json.write_signal(signal: 'next')
               respondant = 'anonymous'
               during_quiz = nil
