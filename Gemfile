@@ -8,6 +8,7 @@ gem 'slack-ruby-client'
 gem 'faye-websocket'
 gem 'eventmachine'
 gem 'google_drive'
+gem 'foreman'
 
 group :development do
   gem 'pry'
