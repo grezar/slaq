@@ -63,7 +63,7 @@ module Slaq
         end
 
         def post_answer(channel, answer, wiki_link)
-          client.message(channel: channel, text: "答え: #{answer}\n wiki: #{wiki_link}")
+          client.message(channel: channel, text: "答え: #{answer}\n wiki: `#{wiki_link}`")
         end
 
         def post_timeup(channel)
