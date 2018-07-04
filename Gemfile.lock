@@ -97,7 +97,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  eventmachine
   faye-websocket
   foreman
   google_drive
