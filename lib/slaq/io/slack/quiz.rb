@@ -54,16 +54,33 @@ module Slaq
           client.message(channel: channel, text: "<@#{respondant}> 答えをどうぞ")
         end
 
-        def post_correct(channel, wiki_link)
-          client.message(channel: channel, text: ":soreseikai:\n wiki: `#{wiki_link}`")
+        def post_correct(channel)
+          client.message(channel: channel, text: ":soreseikai:")
         end
 
         def post_wrong(channel)
           client.message(channel: channel, text: ":tigaimasu:")
         end
 
-        def post_answer(channel, answer, wiki_link)
-          client.message(channel: channel, text: "答え: #{answer}\n wiki: `#{wiki_link}`")
+        def post_answer(channel, question, answer, wiki_link)
+          client.web_client.chat_postMessage(
+            channel: channel,
+            as_user: true,
+            attachments: [
+              {
+                mrkdwn_in: [
+                    "pretext"
+                ],
+                pretext: "_#{question}_",
+                title: answer,
+                title_link: wiki_link,
+                color: "#2eb886",
+                author_name: "正解は...",
+                author_link: "https://github.com/grezar/slaq",
+                author_icon: "http://d2dcan0armyq93.cloudfront.net/photo/odai/400/c212265aabeb54f3680925e73ef9b583_400.jpg"
+              }
+            ]
+          )
         end
 
         def post_timeup(channel)

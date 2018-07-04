@@ -32,6 +32,7 @@ module Slaq
 
         time_pressed_a = 0
         respondant = 'anonymous'
+        question = nil
         answer = nil
         during_quiz = nil
         wiki_link = nil
@@ -43,7 +44,8 @@ module Slaq
               io_json.write_signal(signal: 'next')
               respondant = 'anonymous'
               during_quiz = nil
-              post_correct(data.channel, wiki_link)
+              post_answer(data.channel, question, answer, wiki_link)
+              post_correct(data.channel)
             else
               io_json.write_signal(signal: 'continue')
               respondant = 'anonymous'
@@ -58,6 +60,7 @@ module Slaq
               io_json.truncate_signal_file if io_json.signal_file_exist?
               quiz = Slaq::Quiz.new.random
               quiz.store("channel".to_sym, data.channel)
+              question = quiz[:quiz][:question]
               answer = quiz[:quiz][:answer]
               during_quiz = true
               io_json.write_quiz(quiz)
@@ -73,7 +76,7 @@ module Slaq
             end
           when 'g'
             if during_quiz
-              post_answer(data.channel, answer, wiki_link)
+              post_answer(data.channel, question, answer, wiki_link)
               io_json.write_signal(signal: 'next')
               respondant = 'anonymous'
               during_quiz = nil
