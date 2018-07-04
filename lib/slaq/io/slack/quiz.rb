@@ -54,8 +54,8 @@ module Slaq
           client.message(channel: channel, text: "<@#{respondant}> 答えをどうぞ")
         end
 
-        def post_correct(channel)
-          client.message(channel: channel, text: ":soreseikai:")
+        def post_correct(channel, wiki_link)
+          client.message(channel: channel, text: ":soreseikai:\n wiki: `#{wiki_link}`")
         end
 
         def post_wrong(channel)

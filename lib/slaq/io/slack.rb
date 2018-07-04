@@ -34,6 +34,7 @@ module Slaq
         respondant = 'anonymous'
         answer = nil
         during_quiz = nil
+        wiki_link = nil
 
         client.on :message do |data|
           time_taken_to_answer = data.ts.to_i - time_pressed_a
@@ -42,7 +43,7 @@ module Slaq
               io_json.write_signal(signal: 'next')
               respondant = 'anonymous'
               during_quiz = nil
-              post_correct(data.channel)
+              post_correct(data.channel, wiki_link)
             else
               io_json.write_signal(signal: 'continue')
               respondant = 'anonymous'
@@ -61,6 +62,7 @@ module Slaq
               during_quiz = true
               io_json.write_quiz(quiz)
               io_json.write_signal(signal: 'continue')
+              wiki_link = wikipedia.find_link_by_answer(answer)
             end
           when 'a'
             if (during_quiz && respondant == 'anonymous') || time_taken_to_answer > Slaq::Quiz::ANSWER_LIMIT_TIME
@@ -71,8 +73,6 @@ module Slaq
             end
           when 'g'
             if during_quiz
-              wiki_link = wikipedia.find_link_by_answer(answer)
-              puts wiki_link
               post_answer(data.channel, answer, wiki_link)
               io_json.write_signal(signal: 'next')
               respondant = 'anonymous'
