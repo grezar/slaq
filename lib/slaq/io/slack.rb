@@ -2,6 +2,7 @@ require 'slack-ruby-client'
 require_relative '../quiz'
 require_relative 'slack/quiz'
 require_relative 'json/quiz'
+require_relative '../wikipedia'
 
 module Slaq
   module IO
@@ -15,12 +16,13 @@ module Slaq
         raise 'Missing ENV[SLAQ_RTM_API_TOKEN]!' unless config.token
       end
 
-      attr_reader :client, :io_json
+      attr_reader :client, :io_json, :wikipedia
 
       def initialize
         @client = ::Slack::RealTime::Client.new
         tmp_dir_path = File.expand_path("../../../tmp", __dir__)
         @io_json = Slaq::IO::Json.new(tmp_dir_path)
+        @wikipedia = Slaq::Wikipedia.new
       end
 
       def handle_messages
@@ -69,7 +71,9 @@ module Slaq
             end
           when 'g'
             if during_quiz
-              post_answer(data.channel, answer)
+              wiki_link = wikipedia.find_link_by_answer(answer)
+              puts wiki_link
+              post_answer(data.channel, answer, wiki_link)
               io_json.write_signal(signal: 'next')
               respondant = 'anonymous'
               during_quiz = nil
