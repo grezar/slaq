@@ -1,8 +1,5 @@
-require_relative 'wikipedia/link'
-
 module Slaq
   class Wikipedia
-    include Slaq::Wikipedia::Link
 
     ::Wikipedia.configure {
       domain 'ja.wikipedia.org'
@@ -10,6 +7,11 @@ module Slaq
 
     def wikipedia
       ::Wikipedia
+    end
+
+    def find_link_by_answer(answer)
+      page = wikipedia.find(answer)
+      page.fullurl
     end
   end
 end
