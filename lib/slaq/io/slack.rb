@@ -63,9 +63,9 @@ module Slaq
               question = quiz[:quiz][:question]
               answer = quiz[:quiz][:answer]
               during_quiz = true
+              wiki_link = wikipedia.find_link_by_answer(answer)
               io_json.write_quiz(quiz)
               io_json.write_signal(signal: 'continue')
-              wiki_link = wikipedia.find_link_by_answer(answer)
             end
           when 'a'
             if (during_quiz && respondant == 'anonymous') || time_taken_to_answer > Slaq::Quiz::ANSWER_LIMIT_TIME
