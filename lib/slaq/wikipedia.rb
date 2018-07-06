@@ -1,3 +1,5 @@
+require 'wikipedia'
+
 module Slaq
   class Wikipedia
 
