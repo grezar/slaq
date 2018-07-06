@@ -1,5 +1,3 @@
-require 'google_drive'
-
 module Slaq
   class Quiz
     ANSWER_LIMIT_TIME=10.freeze
