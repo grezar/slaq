@@ -12,7 +12,7 @@ module Slaq
         posted_chars = nil
         during_quiz = nil
 
-        question.chars.each_slice(2).map(&:join).each do |chars|
+        question.chars.each do |chars|
           signal = redis.get_signal
 
           if last_post_ts.nil? && signal != 'next'
