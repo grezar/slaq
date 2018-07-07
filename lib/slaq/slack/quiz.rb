@@ -5,10 +5,6 @@ module Slaq
   class Slack
     module Quiz
 
-      def redis
-        redis ||= Slaq::Redis.new
-      end
-
       def post_quiz_text_continuously
         question = redis.get_question
         channel = redis.get_channel

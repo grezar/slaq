@@ -4,8 +4,8 @@ module Slaq
   module Workers
     class QuizWorker
       def self.run!
-        slack ||= Slaq::Slack.new
-        redis ||= Slaq::Redis.new
+        slack = Slaq::Slack.new
+        redis = Slaq::Redis.new
         redis.flushdb
 
         loop do
