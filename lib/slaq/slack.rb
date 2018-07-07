@@ -81,6 +81,10 @@ module Slaq
             respondant = 'anonymous'
             during_quiz = nil
           end
+        when 's'
+          unless question.nil?
+            post_answer(data.user, question, answer, wiki_link)
+          end
         end
       end
 
