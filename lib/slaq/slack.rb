@@ -8,6 +8,8 @@ module Slaq
   class Slack
     include Slaq::Slack::Quiz
 
+    POST_INTERVAL = 0.1
+
     ::Slack::RealTime::Client.configure do |config|
       config.token = ENV['SLAQ_RTM_API_TOKEN']
       config.logger = Logger.new(STDOUT)
