@@ -10,7 +10,7 @@ module Slaq
       quizzes_dir_path = File.expand_path('../../quizzes', __dir__)
       quizzes = []
 
-      File.open("#{quizzes_dir_path}/quiz.txt", "r") do |quiz_file|
+      File.open("#{quizzes_dir_path}/quiz.txt", "r:UTF-8") do |quiz_file|
         quiz_file.each_line do |quiz|
           splited = quiz.split(",")
           quizzes << { quiz: { question: splited[0].chomp, answer: splited[1].chomp } }

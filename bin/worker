@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-require_relative '../lib/slaq/workers/event_worker'
+require_relative '../lib/slaq/workers/quiz_worker'
 
-puts "[INFO] start slaq event worker"
+puts "[INFO] start slaq quiz worker"
 
-Slaq::Workers::EventWorker.run!
+Slaq::Workers::QuizWorker.run!

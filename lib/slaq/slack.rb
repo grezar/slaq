@@ -53,13 +53,15 @@ module Slaq
         case data.text
         when 'q'
           unless during_quiz
+            redis.flushdb
             quiz = Slaq::Quiz.new.random
-            quiz.store("channel".to_sym, data.channel)
             question = quiz[:quiz][:question]
             answer = quiz[:quiz][:answer]
             during_quiz = true
             wiki_link = wikipedia.find_link_by_answer(answer)
-            Slaq::QuizWorker.perform_async(quiz)
+            redis.set_channel(data.channel)
+            redis.set_question(question)
+            redis.set_answer(answer)
             redis.set_signal('continue')
           end
         when 'a'
@@ -71,8 +73,8 @@ module Slaq
           end
         when 'g'
           if during_quiz
-            post_answer(data.channel, question, answer, wiki_link)
             redis.set_signal('next')
+            post_answer(data.channel, question, answer, wiki_link)
             respondant = 'anonymous'
             during_quiz = nil
           end
