@@ -8,6 +8,7 @@ module Slaq
   class Slack
     include Slaq::Slack::Quiz
 
+    COMMANDS = %w(q a g s)
     POST_INTERVAL = 0.1
 
     ::Slack::RealTime::Client.configure do |config|
@@ -39,7 +40,7 @@ module Slaq
 
       client.on :message do |data|
         time_taken_to_answer = data.ts.to_i - time_pressed_a
-        if data.text != 'g' && data.text != 'q' && data.user == respondant && time_taken_to_answer < Slaq::Quiz::ANSWER_LIMIT_TIME
+        if !Slaq::Slack::COMMANDS.include?(data.text) && data.user == respondant && time_taken_to_answer < Slaq::Quiz::ANSWER_LIMIT_TIME
           if data.text == answer
             redis.set_signal('next')
             respondant = 'anonymous'
