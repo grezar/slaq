@@ -15,10 +15,11 @@ module Slaq
       raise 'Missing ENV[SLAQ_RTM_API_TOKEN]!' unless config.token
     end
 
-    attr_reader :client, :wikipedia
+    attr_reader :client, :redis, :wikipedia
 
     def initialize
       @client = ::Slack::RealTime::Client.new
+      @redis = Slaq::Redis.new
       @wikipedia = Slaq::Wikipedia.new
     end
 
