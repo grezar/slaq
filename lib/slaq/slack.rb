@@ -47,7 +47,7 @@ module Slaq
             post_answer(data.channel, question, answer, wiki_link)
             post_correct(data.channel)
           else
-            redis.set_signal('continue')
+            redis.set_signal('continue') unless redis.get_signal == 'next'
             respondant = 'anonymous'
             post_wrong(data.channel)
           end
