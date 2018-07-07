@@ -10,8 +10,8 @@ services:
     stdin_open: true
     volumes:
       - "../:/app"
+    env_file: ../.env
     environment:
-      SLAQ_RTM_API_TOKEN: xoxb-2451879749-380909465317-MBExdc01EGkS0zQsuBbq4I46
       REDIS_URL: redis://redis:6379
     depends_on:
       - redis

@@ -47,7 +47,7 @@ module Slaq
             post_answer(data.channel, question, answer, wiki_link)
             post_correct(data.channel)
           else
-            redis.set_signal('continue')
+            redis.set_signal('continue') if redis.get_signal != 'next'
             respondant = 'anonymous'
             post_wrong(data.channel)
           end
@@ -69,7 +69,7 @@ module Slaq
           end
         when 'a'
           if (during_quiz && respondant == 'anonymous') || time_taken_to_answer > Slaq::Quiz::ANSWER_LIMIT_TIME
-            redis.set_signal('pause')
+            redis.set_signal('pause') if redis.get_signal == 'continue'
             post_urge_the_answer(data.channel, data.user)
             respondant = data.user
             time_pressed_a = data.ts.to_i
