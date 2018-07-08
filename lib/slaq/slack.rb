@@ -79,7 +79,7 @@ module Slaq
             quiz.revoke_answer_rights(data.user)
           end
         when 's'
-          if quiz.processing?
+          unless quiz.question.nil?
             post_answer(data.user, quiz.question, quiz.answer, quiz.wiki_link)
             quiz.revoke_answer_rights(data.user)
           end
