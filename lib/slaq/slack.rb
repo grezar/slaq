@@ -63,7 +63,7 @@ module Slaq
           end
         when 'a'
           if quiz.processing? && quiz.has_answer_rights?(data.user)
-            if quiz.status == Slaq::Quiz::Status::CONTINUE
+            if redis.get_signal == Slaq::Quiz::Status::CONTINUE
               quiz.status = Slaq::Quiz::Status::PAUSE
               redis.set_signal(quiz.status)
             end
