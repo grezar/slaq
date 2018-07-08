@@ -9,7 +9,6 @@ module Slaq
     include Slaq::Slack::Quiz
 
     COMMANDS = %w(q a g s)
-    POST_INTERVAL = 0.1
 
     ::Slack::RealTime::Client.configure do |config|
       config.token = ENV['SLAQ_RTM_API_TOKEN']

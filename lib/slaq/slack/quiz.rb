@@ -23,7 +23,6 @@ module Slaq
             case signal
             when 'continue'
               posted_chars += chars
-              sleep Slaq::Slack::POST_INTERVAL
               client.web_client.chat_update(channel: channel, text: posted_chars, ts: last_post_ts)
             when 'next'
               break
