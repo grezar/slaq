@@ -1,7 +1,6 @@
 require 'slack-ruby-client'
 require_relative 'quiz'
 require_relative 'slack/quiz'
-require_relative 'wikipedia'
 require_relative 'redis'
 
 module Slaq
@@ -18,11 +17,12 @@ module Slaq
       raise 'Missing ENV[SLAQ_RTM_API_TOKEN]!' unless config.token
     end
 
-    attr_reader :client, :redis, :wikipedia
+    attr_reader :client, :redis, :quiz, :wikipedia
 
     def initialize
       @client = ::Slack::RealTime::Client.new
       @redis = Slaq::Redis.new
+      @quiz = Slaq::Quiz.new
       @wikipedia = Slaq::Wikipedia.new
     end
 
@@ -31,60 +31,57 @@ module Slaq
         puts "Successfully connected, welcome '#{client.self.name}'"
       end
 
-      time_pressed_a = 0
-      respondant = 'anonymous'
-      question = nil
-      answer = nil
-      during_quiz = nil
-      wiki_link = nil
-
       client.on :message do |data|
-        time_taken_to_answer = data.ts.to_i - time_pressed_a
-        if !Slaq::Slack::COMMANDS.include?(data.text) && data.user == respondant && time_taken_to_answer < Slaq::Quiz::ANSWER_LIMIT_TIME
-          if data.text == answer
-            redis.set_signal('next')
-            respondant = 'anonymous'
-            during_quiz = nil
-            post_answer(data.channel, question, answer, wiki_link)
+        if quiz.answerable?(data)
+          if data.text == quiz.answer
+            quiz.status = Slaq::Quiz::Status::NEXT
+            redis.set_signal(quiz.status)
+            quiz.respondent = 'anonymous'
+            post_answer(data.channel, quiz.question, quiz.answer, quiz.wiki_link)
             post_correct(data.channel)
           else
-            redis.set_signal('continue') if redis.get_signal != 'next'
-            respondant = 'anonymous'
+            quiz.status = Slaq::Quiz::Status::CONTINUE
+            redis.set_signal(quiz.status) if redis.get_signal != Slaq::Quiz::Status::NEXT
+            quiz.respondent = 'anonymous'
+            quiz.revoke_answer_rights(data.user)
             post_wrong(data.channel)
           end
         end
 
         case data.text
         when 'q'
-          unless during_quiz
+          unless quiz.processing?
             redis.flushdb
-            quiz = Slaq::Quiz.new.random
-            question = quiz[:quiz][:question]
-            answer = quiz[:quiz][:answer]
-            during_quiz = true
-            wiki_link = wikipedia.find_link_by_answer(answer)
-            redis.set_channel(data.channel)
-            redis.set_question(question)
-            redis.set_answer(answer)
-            redis.set_signal('continue')
+            quiz.revoked_users.clear
+            quiz.status = Slaq::Quiz::Status::CONTINUE
+            selected_quiz = quiz.random
+            quiz.question = selected_quiz[:quiz][:question]
+            quiz.answer = selected_quiz[:quiz][:answer]
+            quiz.wiki_link = wikipedia.find_link_by_answer(quiz.answer)
+            redis.set_quiz(data, quiz)
+            redis.set_signal(quiz.status)
           end
         when 'a'
-          if (during_quiz && respondant == 'anonymous') || time_taken_to_answer > Slaq::Quiz::ANSWER_LIMIT_TIME
-            redis.set_signal('pause') if redis.get_signal == 'continue'
+          if quiz.processing? && quiz.has_answer_rights?(data.user)
+            if quiz.status == Slaq::Quiz::Status::CONTINUE
+              quiz.status = Slaq::Quiz::Status::PAUSE
+              redis.set_signal(quiz.status)
+            end
+            quiz.respondent = data.user
+            quiz.time_pressed_a = data.ts.to_i
             post_urge_the_answer(data.channel, data.user)
-            respondant = data.user
-            time_pressed_a = data.ts.to_i
           end
         when 'g'
-          if during_quiz
-            redis.set_signal('next')
-            post_answer(data.channel, question, answer, wiki_link)
-            respondant = 'anonymous'
-            during_quiz = nil
+          if quiz.processing?
+            quiz.status = Slaq::Quiz::Status::NEXT
+            redis.set_signal(quiz.status)
+            post_answer(data.channel, quiz.question, quiz.answer, quiz.wiki_link)
+            quiz.revoke_answer_rights(data.user)
           end
         when 's'
-          unless question.nil?
-            post_answer(data.user, question, answer, wiki_link)
+          if quiz.processing?
+            post_answer(data.user, quiz.question, quiz.answer, quiz.wiki_link)
+            quiz.revoke_answer_rights(data.user)
           end
         end
       end
