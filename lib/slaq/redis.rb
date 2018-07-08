@@ -8,6 +8,12 @@ module Slaq
       redis.flushdb
     end
 
+    def set_quiz(data, quiz)
+      set_channel(data.channel)
+      set_question(quiz.question)
+      set_answer(quiz.answer)
+    end
+
     def set_question(question)
       redis.set("question", question)
     end
@@ -22,14 +28,6 @@ module Slaq
 
     def get_answer
       redis.get("answer")
-    end
-
-    def set_quiz(quiz)
-      redis.set("quiz", quiz.to_json)
-    end
-
-    def get_quiz
-      redis.get("quiz")
     end
 
     def set_signal(signal)
