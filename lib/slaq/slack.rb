@@ -62,7 +62,7 @@ module Slaq
             redis.set_signal(quiz.status)
           end
         when 'a'
-          if quiz.processing? && quiz.has_answer_rights?(data.user)
+          if quiz.processing? && quiz.has_answer_rights?(data.user) && quiz.respondent == 'anonymous'
             if redis.get_signal == Slaq::Quiz::Status::CONTINUE
               quiz.status = Slaq::Quiz::Status::PAUSE
               redis.set_signal(quiz.status)
@@ -76,6 +76,7 @@ module Slaq
             quiz.status = Slaq::Quiz::Status::NEXT
             redis.set_signal(quiz.status)
             post_answer(data.channel, quiz.question, quiz.answer, quiz.wiki_link)
+            quiz.respondent = 'anonymous'
             quiz.revoke_answer_rights(data.user)
           end
         when 's'
