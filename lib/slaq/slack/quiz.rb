@@ -16,7 +16,7 @@ module Slaq
           signal = redis.get_signal
 
           if last_post_ts.nil? && signal != 'next'
-            response = client.web_client.chat_postMessage(channel: channel, text: chars)
+            response = client.web_client.chat_postMessage(channel: channel, text: chars, as_user: true)
             last_post_ts = response.ts
             posted_chars = chars
           else
@@ -84,7 +84,7 @@ module Slaq
       end
 
       def post_timeup(channel)
-        client.web_client.chat_postMessage(channel: channel, text: "不正解。時間切れです")
+        client.web_client.chat_postMessage(channel: channel, text: "不正解。時間切れです", as_user: true)
       end
     end
   end
