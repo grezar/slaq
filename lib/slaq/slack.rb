@@ -49,7 +49,7 @@ module Slaq
         end
 
         case data.text
-        when 'q'
+        when 'q', ':question:'
           unless quiz.processing?
             redis.flushdb
             quiz.revoked_users.clear
@@ -61,7 +61,7 @@ module Slaq
             redis.set_quiz(data, quiz)
             redis.set_signal(quiz.status)
           end
-        when 'a'
+        when 'a', ':raised_hand:', ':raising_hand:', ':man-raising-hand:', ':woman-raising-hand:'
           if quiz.processing? && quiz.has_answer_rights?(data.user) && quiz.respondent == 'anonymous'
             if redis.get_signal == Slaq::Quiz::Status::CONTINUE
               quiz.status = Slaq::Quiz::Status::PAUSE
@@ -71,7 +71,7 @@ module Slaq
             quiz.time_pressed_a = data.ts.to_i
             post_urge_the_answer(data.channel, data.user)
           end
-        when 'g'
+        when 'g', ':middle_finger:', ':hankey:', ':fu:', ':shrug:', ':shrug_woman:', ':man-shrugging:'
           if quiz.processing?
             quiz.status = Slaq::Quiz::Status::NEXT
             redis.set_signal(quiz.status)
@@ -79,7 +79,7 @@ module Slaq
             quiz.respondent = 'anonymous'
             quiz.revoke_answer_rights(data.user)
           end
-        when 's'
+        when 's', ':he:'
           unless quiz.question.nil?
             post_answer(data.user, quiz.question, quiz.answer, quiz.wiki_link)
             quiz.revoke_answer_rights(data.user)
