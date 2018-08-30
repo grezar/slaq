@@ -8,8 +8,6 @@ services:
       dockerfile: ./docker/Dockerfile
     tty: true
     stdin_open: true
-    volumes:
-      - "../:/app"
     env_file: ../.env
     environment:
       REDIS_URL: redis://redis:6379
