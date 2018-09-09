@@ -23,7 +23,6 @@ class App
 
       client.on :message do |data|
         if SLAQ_COMMANDS.include?(data.text)
-          require 'pry' ; binding.pry
           __send__("command_#{data.text}", data)
           next
         end

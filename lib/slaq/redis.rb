@@ -3,7 +3,6 @@ require 'json'
 
 module Slaq
   class Redis
-
     def flushdb
       redis.flushdb
     end

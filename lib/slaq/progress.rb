@@ -4,7 +4,7 @@ module Slaq
     PAUSE = 'pause'
     NEXT = 'next'
 
-    attr_reader :status, :revoked_users
+    attr_accessor :status, :revoked_users
 
     def initialize
       @status = nil
