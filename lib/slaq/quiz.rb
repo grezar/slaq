@@ -1,11 +1,8 @@
-require_relative 'quiz/respondent'
 require_relative 'progress'
 require_relative 'wikipedia'
 
 module Slaq
   class Quiz
-    include Slaq::Quiz::Respondent
-
     ANSWER_LIMIT_TIME=10.freeze
 
     attr_accessor :question, :answer, :wiki_link

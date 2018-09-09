@@ -4,10 +4,11 @@ module Slaq
     PAUSE = 'pause'
     NEXT = 'next'
 
-    attr_accessor :status, :revoked_users
+    attr_accessor :status, :respondent, :revoked_users
 
     def initialize
       @status = nil
+      @respondent = nil
       @time_pressed_a = nil
       @revoked_users = []
     end
@@ -18,6 +19,10 @@ module Slaq
       else
         status != NEXT
       end
+    end
+
+    def revoke(user)
+      revoked_users.push(user)
     end
 
     def revoked?(user)
