@@ -1,8 +1,23 @@
+require 'slack-ruby-client'
 require_relative 'quiz'
 require_relative 'redis'
 
+Slack::RealTime::Client.configure do |config|
+  config.token = ENV['SLAQ_RTM_API_TOKEN']
+  config.logger = Logger.new(STDOUT)
+  config.logger.level = Logger::DEBUG
+  raise 'Missing ENV[SLAQ_RTM_API_TOKEN]!' unless config.token
+end
+
 module Slaq
   class Slack
+    attr_reader :client, :post_interval
+
+    def initialize
+      @client = ::Slack::RealTime::Client.new
+      @post_interval = ENV['POST_INTERVAL'].to_i || 0.1
+    end
+
     def post_quiz_text_continuously
       question = redis.get_question
       channel = redis.get_channel
@@ -21,7 +36,7 @@ module Slaq
           case signal
           when 'continue'
             posted_chars += chars
-            sleep Slaq::Slack::POST_INTERVAL
+            sleep post_interval
             client.web_client.chat_update(channel: channel, text: posted_chars, ts: last_post_ts)
           when 'next'
             break

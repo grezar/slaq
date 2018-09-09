@@ -1,21 +1,13 @@
-require 'slack-ruby-client'
 require_relative 'lib/slaq'
 
 SLAQ_COMMANDS = %w(q a g s)
-
-Slack::RealTime::Client.configure do |config|
-  config.token = ENV['SLAQ_RTM_API_TOKEN']
-  config.logger = Logger.new(STDOUT)
-  config.logger.level = Logger::DEBUG
-  raise 'Missing ENV[SLAQ_RTM_API_TOKEN]!' unless config.token
-end
 
 class App
   extend Slaq::Command
 
   class << self
     def start!
-      client = Slack::RealTime::Client.new
+      client = Slaq::Slack.new.client
 
       client.on :hello do
         puts "Successfully connected, welcome '#{client.self.name}'"
