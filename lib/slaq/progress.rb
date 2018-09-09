@@ -16,7 +16,7 @@ module Slaq
       if status.nil?
         false
       else
-        status != Slaq::Quiz::Status::NEXT
+        status != NEXT
       end
     end
 
