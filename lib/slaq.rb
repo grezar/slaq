@@ -1,10 +1,10 @@
-require 'slack-ruby-client'
+require_relative 'slaq/answer'
+require_relative 'slaq/version'
+require_relative 'slaq/quiz'
 require_relative 'slaq/slack'
-require_relative 'slaq/workers/quiz_worker'
+require_relative 'slaq/redis'
+require_relative 'slaq/wikipedia'
+require_relative 'slaq/command'
 
 module Slaq
-  def self.start!
-    slack = Slaq::Slack.new
-    slack.handle_messages
-  end
 end

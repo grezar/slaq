@@ -1,102 +1,109 @@
 require 'slack-ruby-client'
 require_relative 'quiz'
-require_relative 'slack/quiz'
 require_relative 'redis'
+
+Slack::RealTime::Client.configure do |config|
+  config.token = ENV['SLAQ_RTM_API_TOKEN']
+  config.logger = Logger.new(STDOUT)
+  config.logger.level = Logger::DEBUG
+  raise 'Missing ENV[SLAQ_RTM_API_TOKEN]!' unless config.token
+end
 
 module Slaq
   class Slack
-    include Slaq::Slack::Quiz
-
-    COMMANDS = %w(q a g s)
-    POST_INTERVAL = 0.1
-
-    ::Slack::RealTime::Client.configure do |config|
-      config.token = ENV['SLAQ_RTM_API_TOKEN']
-      config.logger = Logger.new(STDOUT)
-      config.logger.level = Logger::DEBUG
-      raise 'Missing ENV[SLAQ_RTM_API_TOKEN]!' unless config.token
-    end
-
-    attr_reader :client, :redis, :quiz, :wikipedia
+    attr_reader :client, :post_interval
 
     def initialize
       @client = ::Slack::RealTime::Client.new
-      @redis = Slaq::Redis.new
-      @quiz = Slaq::Quiz.new
-      @wikipedia = Slaq::Wikipedia.new
+      @post_interval = ENV['POST_INTERVAL'].to_i || 0.1
     end
 
-    def handle_messages
-      client.on :hello do
-        puts "Successfully connected, welcome '#{client.self.name}'"
-      end
+    def post_quiz_text_continuously
+      question = redis.get_question
+      channel = redis.get_channel
+      last_post_ts = nil
+      posted_chars = nil
+      during_quiz = nil
 
-      client.on :message do |data|
-        if quiz.answerable?(data)
-          if data.text == quiz.answer
-            quiz.status = Slaq::Quiz::Status::NEXT
-            redis.set_signal(quiz.status)
-            quiz.respondent = 'anonymous'
-            post_answer(data.channel, quiz.question, quiz.answer, quiz.wiki_link)
-            post_correct(data.channel)
-          else
-            quiz.status = Slaq::Quiz::Status::CONTINUE
-            redis.set_signal(quiz.status) if redis.get_signal != Slaq::Quiz::Status::NEXT
-            quiz.respondent = 'anonymous'
-            quiz.revoke_answer_rights(data.user)
-            post_wrong(data.channel)
-          end
-        end
+      question.chars.each do |chars|
+        signal = redis.get_signal
 
-        case data.text
-        when 'q', ':question:'
-          unless quiz.processing?
-            redis.flushdb
-            quiz.revoked_users.clear
-            quiz.status = Slaq::Quiz::Status::CONTINUE
-            selected_quiz = quiz.random
-            quiz.question = selected_quiz[:quiz][:question]
-            quiz.answer = selected_quiz[:quiz][:answer]
-            quiz.wiki_link = wikipedia.find_link_by_answer(quiz.answer)
-            redis.set_quiz(data, quiz)
-            redis.set_signal(quiz.status)
-          end
-        when 'a', ':raised_hand:', ':raising_hand:', ':man-raising-hand:', ':woman-raising-hand:'
-          if quiz.processing? && quiz.has_answer_rights?(data.user) && quiz.respondent == 'anonymous'
-            if redis.get_signal == Slaq::Quiz::Status::CONTINUE
-              quiz.status = Slaq::Quiz::Status::PAUSE
-              redis.set_signal(quiz.status)
+        if last_post_ts.nil? && signal != 'next'
+          response = client.web_client.chat_postMessage(channel: channel, text: chars)
+          last_post_ts = response.ts
+          posted_chars = chars
+        else
+          case signal
+          when 'continue'
+            posted_chars += chars
+            sleep post_interval
+            client.web_client.chat_update(channel: channel, text: posted_chars, ts: last_post_ts)
+          when 'next'
+            break
+          when 'pause'
+            pause_time = 0
+            posted_chars += chars
+            until signal != 'pause'
+              sleep 0.1
+              pause_time += 0.1
+              signal = redis.get_signal
+              if pause_time > Slaq::Quiz::ANSWER_LIMIT_TIME
+                post_timeup(channel)
+                sleep 1
+                client.web_client.chat_update(channel: channel, text: posted_chars, ts: last_post_ts)
+                signal = redis.set_signal('continue')
+                next
+              end
             end
-            quiz.respondent = data.user
-            quiz.time_pressed_a = data.ts.to_i
-            post_urge_the_answer(data.channel, data.user)
-          end
-        when 'g', ':middle_finger:', ':hankey:', ':fu:', ':shrug:', ':shrug_woman:', ':man-shrugging:'
-          if quiz.processing?
-            quiz.status = Slaq::Quiz::Status::NEXT
-            redis.set_signal(quiz.status)
-            post_answer(data.channel, quiz.question, quiz.answer, quiz.wiki_link)
-            quiz.respondent = 'anonymous'
-            quiz.revoke_answer_rights(data.user)
-          end
-        when 's', ':he:'
-          unless quiz.question.nil?
-            post_answer(data.user, quiz.question, quiz.answer, quiz.wiki_link)
-            quiz.revoke_answer_rights(data.user)
+            client.web_client.chat_update(channel: channel, text: posted_chars, ts: last_post_ts)
+          else
+            raise 'Unknown signal'
           end
         end
       end
+    end
 
-      client.on :close do |data|
-        puts 'Connection closing, exiting.'
-      end
+    def post_urge_the_answer(channel, respondant)
+      client.message(channel: channel, text: "<@#{respondant}> 答えをどうぞ")
+    end
 
-      client.on :closed do |data|
-        puts 'Connection has been disconnected.'
-        client.start!
-      end
+    def post_correct(channel)
+      client.message(channel: channel, text: ":soreseikai:")
+    end
 
-      client.start!
+    def post_wrong(channel)
+      client.message(channel: channel, text: ":tigaimasu:")
+    end
+
+    def post_answer(channel, question, answer, wiki_link)
+      client.web_client.chat_postMessage(
+        channel: channel,
+        as_user: true,
+        attachments: [
+          {
+            mrkdwn_in: [
+              "pretext"
+            ],
+            pretext: "_#{question}_",
+            title: answer,
+            title_link: wiki_link,
+            color: "#2eb886",
+            author_name: "正解は...",
+            author_link: "https://github.com/grezar/slaq",
+            author_icon: "http://d2dcan0armyq93.cloudfront.net/photo/odai/400/c212265aabeb54f3680925e73ef9b583_400.jpg"
+          }
+        ]
+      )
+    end
+
+    def post_timeup(channel)
+      client.web_client.chat_postMessage(channel: channel, text: "不正解。時間切れです")
+    end
+
+    private
+
+    def redis
+      @redis ||= Slaq::Redis.new
     end
   end
 end

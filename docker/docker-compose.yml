@@ -6,6 +6,7 @@ services:
     build:
       context: ../
       dockerfile: ./docker/Dockerfile
+    command: bundle exec ruby app.rb
     tty: true
     stdin_open: true
     env_file: ../.env
